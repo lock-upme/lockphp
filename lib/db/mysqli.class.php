@@ -678,6 +678,95 @@ class DB {
     	return $data;    
     }
     
+    public function quote($str, $noarray = false) {
+    	if (is_string($str))
+    		return '\'' . ($str) . '\'';//mysql_escape_string mysql_real_escape_string
+    
+    	if (is_int($str) or is_float($str))
+    		return '\'' . $str . '\'';
+    
+    	if (is_array($str)) {
+    		if($noarray === false) {
+    			foreach ($str as &$v) {
+    				$v = $this->quote($v, true);
+    			}
+    			return $str;
+    		} else {
+    			return '\'\'';
+    		}
+    	}
+    
+    	if (is_bool($str))
+    		return $str ? '1' : '0';
+    
+    	return '\'\'';
+    }
+    
+    public function quote_field($field) {
+    	if (is_array($field)) {
+    		foreach ($field as $k => $v) {
+    			$field[$k] = $this->quote_field($v);
+    		}
+    	} else {
+    		if (strpos($field, '`') !== false)
+    			$field = str_replace('`', '', $field);
+    		$field = '`' . $field . '`';
+    	}
+    	return $field;
+    }
+    
+    public function implode($array, $glue = ',') {
+    	$sql = $comma = '';
+    	$glue = ' ' . trim($glue) . ' ';
+    	foreach ($array as $k => $v) {
+    		$sql .= $comma . $this->quote_field($k) . '=' . $this->quote($v);
+    		$comma = $glue;
+    	}
+    	return $sql;
+    }
+    
+    /**
+     * 数据添加
+     *
+     * @param string $table
+     * @param array $data
+     * @param string $return_insert_id
+     * @param string $replace
+     * @return number
+     */
+    public function insert($table, $data, $return_insert_id = false, $replace = false) {
+    	$sql = $this->implode($data);
+    	$cmd = $replace ? 'REPLACE INTO' : 'INSERT INTO';
+    	$queryid =  $this->query("$cmd $table SET $sql");
+    	return $return_insert_id ? $this->fetchLastInsertId() : $queryid;
+    }
+    
+    /**
+     * 更新数据
+     *
+     * @param string $table
+     * @param array $data
+     * @param string $condition
+     * @param string $unbuffered
+     * @param string $low_priority
+     * @return boolean|number
+     */
+    public function update($table, $data, $condition, $unbuffered = false, $low_priority = false) {
+    	$sql = $this->implode($data);
+    	if (empty($sql)) { return false; }
+    	$cmd = "UPDATE " . ($low_priority ? 'LOW_PRIORITY' : '');
+    	$where = '';
+    	if (empty($condition)) {
+    		$where = '1';
+    	} elseif (is_array($condition)) {
+    		$where = $this->implode($condition, ' AND ');
+    	} else {
+    		$where = $condition;
+    	}
+    	$res = $this->query("$cmd $table SET $sql WHERE $where");
+    	return $res;
+    }
+    
     /**
      * @desc remove blank & enter
      * @param unknown $sql
