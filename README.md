@@ -22,6 +22,7 @@
 		mail						------- 邮件发送
 		pagination			------- 分页
 		smarty					------- 模板引擎
+		qrcode				------- 二维码
 		snoopy				------- 远程页面抓取
 		functions.php 	------- 常用方法, 可自行添加
 		Lock.class.php	------- Lock 类
