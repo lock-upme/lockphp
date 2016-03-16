@@ -14,6 +14,10 @@
 		return implode('.', $iparr);
 		//return preg_replace('/\.\d+$/', '.*', $ip);
 	}
+	
+	function showmessage($msg, $url=W_DOMAIN){
+		
+	}
 
 	/**
 	 * @desc 返回信息
@@ -621,7 +625,7 @@
      * @desc 是否为手机
      * @return bool
      */
-    function checkWap(){
+    function checkWap() {
         if (stristr($_SERVER['HTTP_VIA'],"wap")) {
             return true;
         } elseif(strpos(strtoupper($_SERVER['HTTP_ACCEPT']),"VND.WAP.WML") > 0){
@@ -631,4 +635,13 @@
         } else{
             return false;
         }
+    }
+    
+    /**
+     * @desc 获取全局配置文件
+     */
+    function G($key) {
+    	if (empty($key)) { return false; }
+    	require_once(D_ROOT.'configs/global.php');
+    	return isset($_GLOBAL[$key]) ? $_GLOBAL[$key] : '';    	
     }
