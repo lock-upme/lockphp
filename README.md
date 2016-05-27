@@ -10,11 +10,11 @@
 
 #目录结构
 
-	configs 					------- 配置文件
-		db.inc.php			------- 数据库信息
+	configs             ------- 配置文件
+		db.php			    ------- 数据库信息
 		route.php			------- 路由表
-		setting.inc.php	------- 配置信息
-		global.inc.php	------- 全局配置信息
+		setting.php	        ------- 配置信息
+		global.php	        ------- 全局配置信息
 	controls					------- 类控制
 		Index.class.php	------- 首页
 	lib							------- 库

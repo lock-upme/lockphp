@@ -13,7 +13,7 @@ class Lock {
 		require_once(D_ROOT.'lib/pagination/pagination.class.php');//引入分页
 		require_once(D_ROOT.'lib/db/mysqli.class.php');//mysqli 驱动
 		
-		require_once(D_ROOT.'configs/db.inc.php');
+		require_once(D_ROOT.'configs/db.php');
 		$db = new DB($cc['dbuser'], $cc['dbpwd'], $cc['dbdatabase'],$cc['dbhost']);
 		
 		$smarty = new Smt;
