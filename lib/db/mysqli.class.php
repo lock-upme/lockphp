@@ -10,6 +10,7 @@ class DB {
     public $dblogin;                         // database login name
     public $dbpass;                          // database login password
     public $dbname;                          // database name
+    public $port = '3306';
     public $dblink;                          // database link identifier
     public $queryid;                         // database query identifier
     public $error = array();                 // storage for error messages
@@ -43,6 +44,10 @@ class DB {
         return $this->dbname;
 
     } // end function
+    
+    public function get_port(){
+    	return $this->port;
+    }
 
     public function set_dbhost($value){
         return $this->dbhost = $value;
@@ -63,6 +68,10 @@ class DB {
         return $this->dbname = $value;
 
     } // end function
+    
+    public function set_port($value){
+    	return $this->port = $value;
+    }
 
     public function get_errors(){
         return $this->error;
@@ -80,13 +89,16 @@ class DB {
      * @return     void
      * @access     public
      */
-    public function DB($dblogin, $dbpass, $dbname, $dbhost = null) {
+    public function __construct($dblogin, $dbpass, $dbname, $dbhost = null, $port = null) {
         $this->set_dblogin($dblogin);
         $this->set_dbpass($dbpass);
         $this->set_dbname($dbname);
-
+		//echo $dbname."<br/>";
         if ($dbhost != null) {
             $this->set_dbhost($dbhost);
+        }
+        if ($port != null) {
+        	$this->set_port($port);
         }
 
     } // end function
@@ -100,7 +112,7 @@ class DB {
      * @scope      public
      */
     public function connect(){
-        $this->dblink = mysqli_connect($this->dbhost, $this->dblogin, $this->dbpass, $this->dbname);
+        $this->dblink = mysqli_connect($this->dbhost, $this->dblogin, $this->dbpass, $this->dbname, $this->port);
 
         if (!$this->dblink) {
             $this->return_error('Unable to connect to the database.');
@@ -258,7 +270,7 @@ class DB {
     public function fetchRow(){
         if (isset($this->queryid)) {
             $this->previd++;
-            return $this->record = mysqli_fetch_array($this->queryid,MYSQL_ASSOC);
+            return $this->record = mysqli_fetch_array($this->queryid,MYSQLI_ASSOC);
         } else {
             $this->return_error('No query specified.');
         }
@@ -278,7 +290,7 @@ class DB {
     	$res = array();
         if (isset($this->queryid)) {
             $this->previd++;
-            while($row = @mysqli_fetch_array($this->queryid,MYSQL_ASSOC))
+            while($row = @mysqli_fetch_array($this->queryid,MYSQLI_ASSOC))
             {
                 $res[] = $row;
             }
@@ -737,6 +749,7 @@ class DB {
     public function insert($table, $data, $return_insert_id = false, $replace = false) {
     	$sql = $this->implode($data);
     	$cmd = $replace ? 'REPLACE INTO' : 'INSERT INTO';
+    	//echo "$cmd $table SET $sql";
     	$queryid =  $this->query("$cmd $table SET $sql");
     	return $return_insert_id ? $this->fetchLastInsertId() : $queryid;
     }

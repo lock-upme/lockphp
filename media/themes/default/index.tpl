@@ -1,12 +1,16 @@
-﻿<!DOCTYPE html>
-<html lang="zh-cn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>欢迎使用LockPhp框架</title>
+{{include file = 'libpage/meta.tpl'}}
+<title>登录-{{#global_title#}}</title>
+<meta name="keywords" content="{{#global_keywords#}}" />
+<meta name="description" content="{{#global_desp#}}" />
+{{include file = 'libpage/head.tpl'}}
 </head>
-<body style="font-size:18px; text-align:center;margin:130px;">
+<body style="font-size:26px; text-align:center;margin:130px;">
 欢迎使用{{$lock}}
 <br/><br/>
-适合中小企业平台构架设计，简单快速搭建。
+适合中小企业平台构架及API设计，简单快速搭建。
+{{include file = 'libpage/foot.tpl'}}
 </body>
 </html>

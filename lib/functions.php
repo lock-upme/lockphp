@@ -1,7 +1,13 @@
 <?php
-/**
- * 常用方法
- */
+
+	/**
+	 * @desc 打印 
+	 * @param unknown $msg
+	 */
+	function pr($msg) {
+		echo "<pre>";
+		print_r($msg);
+	}
 
 	/**
 	 * @desc 隐藏IP
@@ -15,8 +21,20 @@
 		//return preg_replace('/\.\d+$/', '.*', $ip);
 	}
 	
-	function showmessage($msg, $url=W_DOMAIN){
-		
+	/**
+	 * @desc JSON解码
+	 * @param json $joson
+	 * @return array
+	 */
+	function jsondemsg($json) {
+		if (empty($json)) { return false; }
+		$res = json_decode($json, true);
+		if ($res['status'] == 407){
+			header('Location: /');
+			exit();
+		} else {
+			return $res;
+		}
 	}
 
 	/**
@@ -133,50 +151,6 @@
 		$words = trim($words, ', ');
 		return $words;
 	}
-  	/**
-  	 * @desc DOM IMg
-  	 */
-	function extracthtml($html) {
-		$dom = new DOMDocument();
-		$dom->preserveWhiteSpace = false;
-		$dom->strictErrorChecking = false;
-		$dom->recover = true;		
-		$html = str_replace('<meta charset="utf-8">','<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />',$html);
-		$html = str_replace('<meta charset="utf-8" />','<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />',$html);
-		$html = str_replace('<meta charset="gb2312" />','<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />',$html);
-		$html = str_replace('<meta charset="gb2312">','<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />',$html);
-		$html = str_replace('gb2312','utf-8',$html);				
-		//echo $html;
-		@$dom->loadHTML($html);
-		$htmlarr = $imgarr = array();		
-		//echo $dom->getElementsByTagName('title')->nodeValue;
-		//title
-		$title = $dom->getElementsByTagName('title')->item(0);
-		if ($title) {			
-			$htmlarr['title'] = mb_convert_encoding($title->nodeValue, 'UTF-8', 'UTF-8, GBK');
-		}
-		$metas = $dom->getElementsByTagName('meta');
-		$k = 0;
-		$content = '';
-		foreach ($metas as $meta) {
-			if (strtolower($meta->getAttribute('name')) == 'description') {
-				$content = $meta->getAttribute('content');
-			}
-		}			
-		if ($content) {
-			$htmlarr['content'] = mb_convert_encoding($content, 'UTF-8', 'UTF-8, GBK');
-		}
-		//image
-		$imgs = $dom->getElementsByTagName('img');
-		foreach($imgs as $img) {
-			$src = $img->getAttribute('src');
-			if ($src) $imgarr[] = $src;
-		}
-		$htmlarr['img'] = $imgarr;
-		unset($dom, $imgarr);
-
-		return $htmlarr;
-	}
 
     /**
      * @desc 得到IP地址
@@ -245,7 +219,7 @@
 	function setAuthCode($string, $operation = 'DECODE', $key = '', $expiry = 0) {
 	    $ckey_length = 4;
 
-	    $key = md5($key ? $key : APP_KEY);
+	    $key = md5($key ? $key : KEY);
 	    $keya = md5(substr($key, 0, 16));
 	    $keyb = md5(substr($key, 16, 16));
 	    $keyc = $ckey_length ? ($operation == 'DECODE' ? substr($string, 0, $ckey_length): substr(md5(microtime()), -$ckey_length)) : '';
@@ -430,8 +404,7 @@
      * @desc 获取用户浏览器
      * @return string
      */
-    function getUserBrowser()
-    {
+    function getUserBrowser() {
         $sys = $_SERVER['HTTP_USER_AGENT'];
         if (stripos($sys, "NetCaptor") > 0) {
             $exp[0] = "NetCaptor";
@@ -468,7 +441,7 @@
     /**
      * @desc 得到首字母大写
      */    
-    function getfirstchar($s0){
+    function getFirstChar($s0) {
     	$firstchar_ord = ord(strtoupper($s0{0}));
     	if (($firstchar_ord>=65 and $firstchar_ord<=91) or ($firstchar_ord>=48 and $firstchar_ord<=57)) return strtoupper($s0{0});
     	$s=iconv("UTF-8","gb2312", $s0);
@@ -499,20 +472,6 @@
     	return null;
     }
    
-   /**
-    * @desc 采集内容
-    */
-    function getContent($url) {
-        set_time_limit(10);   
-        $re = getFileByGetContent($url);
-        if(empty($re)) { $re = getFileBySnooy($url); }
-        if (empty($re)) { return ''; }        
-        //转换成utr-8编码
-        $re = array_iconv($re);
-        if (empty($re)) { echo "编码转换失败"; }
-        $re = str_replace("\n","",$re);
-        return $re;
-    }
     
    /**
     * @desc 获取页面内容方法一、file_get_contents
@@ -528,18 +487,20 @@
         return @file_get_contents($url);
     }
     
-   /**
-    * @desc 获取页面内容方法二、snoopy类
-    */
-    function getFileBySnooy($url){
-        require_once D_ROOT.'/lib/snoopy/Snoopy.class.php';            
-        $snoopy = new Snoopy;
-        $snoopy->agent = 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.146 Safari/537.36';
-        $snoopy->_fp_timeout = 10;//超时时间
-        $urlSplit = self::urlSimplify($url);//url分割
-        $snoopy->referer = $urlSplit['domain'];//伪造来源
-        $result = $snoopy->fetch($url); //获取所有内容
-        return  $snoopy->results; //返回
+    function base64url_decode($data) {
+    	return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
+    }
+    
+    function writeFileContent($filename, $data) {
+    	$fp=fopen($filename,"w");
+    	fputs($fp,$data);
+    	fclose($fp);
+    	return true;
+    	//$res = file_put_contents ($filename , $data);
+    	//return $res;
+    }
+    function getFileContent($filename) {
+    	return file_get_contents ($filename);
     }
     
     /**  
@@ -593,6 +554,7 @@
     	}
     	return false;
     }
+    
     /**
      * @desc 得到手机系统
      * @return string
@@ -604,13 +566,30 @@
     		return 'android';
     	}
     }
+    
+    /**
+     * @desc 是否为手机
+     * @return bool
+     */
+    function checkWap() {
+    	if (stristr($_SERVER['HTTP_VIA'],"wap")) {
+    		return true;
+    	} elseif(strpos(strtoupper($_SERVER['HTTP_ACCEPT']),"VND.WAP.WML") > 0){
+    		return true;
+    	} elseif(preg_match('/(blackberry|configuration\/cldc|hp |hp-|htc |htc_|htc-|iemobile|kindle|midp|mmp|motorola|mobile|nokia|opera mini|opera |Googlebot-Mobile|YahooSeeker\/M1A1-R2D2|android|iphone|ipod|mobi|palm|palmos|pocket|portalmmm|ppc;|smartphone|sonyericsson|sqh|spv|symbian|treo|up.browser|up.link|vodafone|windows ce|xda |xda_)/i', $_SERVER['HTTP_USER_AGENT'])){
+    		return true;
+    	} else{
+    		return false;
+    	}
+    }
+    
     /**
      * @desc 给图片加域名
      * @param $html
      * @param $domain
      * @return mixed
      */
-    function imageAddDomain($html,$domain) {
+    function imageAddDomain($html, $domain) {
         $preg="/<[img|IMG].*?src=[\'|\"](.*?(?:[\.gif|\.jpg]))[\'|\"].*?[\/]?>/";
         preg_match_all($preg,$html,$matches);
         for ($i=0; $i< count($matches[0]); $i++) {
@@ -619,29 +598,327 @@
             $html = str_replace($match[0],'src="'.$domain.$match[1].'"',$html);
         }
         return $html;
-    }
-    
-    /**
-     * @desc 是否为手机
-     * @return bool
-     */
-    function checkWap() {
-        if (stristr($_SERVER['HTTP_VIA'],"wap")) {
-            return true;
-        } elseif(strpos(strtoupper($_SERVER['HTTP_ACCEPT']),"VND.WAP.WML") > 0){
-            return true;
-        } elseif(preg_match('/(blackberry|configuration\/cldc|hp |hp-|htc |htc_|htc-|iemobile|kindle|midp|mmp|motorola|mobile|nokia|opera mini|opera |Googlebot-Mobile|YahooSeeker\/M1A1-R2D2|android|iphone|ipod|mobi|palm|palmos|pocket|portalmmm|ppc;|smartphone|sonyericsson|sqh|spv|symbian|treo|up.browser|up.link|vodafone|windows ce|xda |xda_)/i', $_SERVER['HTTP_USER_AGENT'])){
-            return true;
-        } else{
-            return false;
-        }
-    }
+    }       
     
     /**
      * @desc 获取全局配置文件
      */
     function G($key) {
     	if (empty($key)) { return false; }
-    	require_once(D_ROOT.'configs/global.php');
-    	return isset($_GLOBAL[$key]) ? $_GLOBAL[$key] : '';    	
+    	require(D_ROOT.'configs/global.php');
+		if (strpos($key, '.') === false) {
+			return isset($_GLOBAL[$key]) ? $_GLOBAL[$key] : '';
+		} else {
+			$keyarr = explode('.',$key);
+			return isset($_GLOBAL[$keyarr[0]][$keyarr[1]]) ? $_GLOBAL[$keyarr[0]][$keyarr[1]] : '';
+		}
     }
+    
+    /**
+     * @desc 切换数据库
+     * @param string $module
+     * @param bool $prename
+     * @return array(db, prename, dbname)
+     */
+    function switchDB($module, $prename=true) {
+    	require(D_ROOT.'configs/db.php');    	
+    	$dbArr = $dbGroup[$module];
+    	
+    	if (!isset($dbArr)) {
+    		return;
+    	}
+    	$db = new DB($dbArr['user'], $dbArr['pwd'], $dbArr['name'], $dbArr['host'], $dbArr['port']);
+    	return $prename ? array($db, $dbArr['name'].'_', $dbArr['name']) : $db;    	
+    }
+    
+    /**
+     * @desc 表前缀
+     * @param string $module
+     * @return table 
+     */
+    function getTablePrename($module='users') {
+    	require(D_ROOT.'configs/db.php');
+    	$dbArr = $dbGroup[$module];
+    	
+    	if (!isset($dbArr)) {
+    		return;
+    	}
+    	return ($dbArr['name']) ? $dbArr['name'].'_' : false;
+    }    
+    
+	/**
+	 * @desc 库前缀
+	 * @param string $module
+	 * @return table
+	 */
+	function getDbName($module='users') {
+		require(D_ROOT.'configs/db.php');
+		$dbArr = $dbGroup[$module];
+
+		if (!isset($dbArr)) {
+			return false;
+		}
+		return !empty($dbArr['name']) ? $dbArr['name'] : false;
+	}
+	
+	/**
+	 * 系统用户cookie信息
+	 */
+	function userBoardCookie() {
+		$cookeArr = G('cookie');
+		$key = $cookeArr['boardname'];
+		if (!isset($_COOKIE[$key])) {
+			return false;
+		}
+		$ckarr = explode("\t", addslashes(setAuthCode($_COOKIE[$key], 'DECODE', KEY)));
+		list($uid, $username, $status, $email, $rule) = $ckarr;
+		 
+		$arr = array('uid' => $uid, 'username' => $username, 'status' => $status, 'email' => $email, 'rule' => $rule);
+		return $arr;
+	}
+	
+	/**
+	 * @desc 发送文件流
+	 * @param string $url
+	 * @param binary $file
+	 * @return string
+	 */
+	function sendStreamFile($url, $file) {
+		if (empty($url) || empty($file)) { return false; }		
+		$opts = array(
+				'http' => array(
+						'method' => 'POST',
+						'header' => 'content-type:application/x-www-form-urlencoded',
+						'content' => $file
+				)
+		);
+		$context = stream_context_create($opts);
+		$response = file_get_contents($url, false, $context);
+		return $response;
+	}
+
+	/**
+	 * @desc 取得一级数据
+	 * @param $tab
+	 * @param $id
+	 * @return array
+	 */
+	function getDictList($tab, $id = false) {
+		$dict = G('dict.'.$tab);
+
+		$tid = 'upid';
+		if ($tab == 'school') { $tid = 'cid'; }
+		elseif ($tab == 'department') { $tid = 'sid'; }
+		$dictarr = array();
+		foreach ($dict as $key => $val) {
+			$dictarr[$val[$tid]][$key] = $val;
+		}
+		return ($id === false) ? $dictarr : !empty($dictarr[$id]) ? $dictarr[$id] : '';
+	}
+	
+	/**
+	 * @desc 取得具体值
+	 * @param $tab
+	 * @param $id
+	 * @return array
+	 */
+	function getDictVal($tab, $id) {
+		if (!$tab || !$id)  return false;
+		$dict = G('dict.'.$tab);
+		if (!$dict)  return false;
+		return $dict[$id];
+	}
+	
+	/**
+	 * @desc 日期格式验证 支持的格式为“YYYY-MM-DD HH:mm:ss”和“YYYY-MM-DD”
+	 * @param $datetime
+	 * @return bool
+	 */
+	function checkDateTime($datetime){
+		if (!$datetime){ return false;}
+		if (preg_match("/^((\\d{2}(([02468][048])|([13579][26]))[\\-\\/\\s]?((((0?[13578])|(1[02]))[\\-\\/\\s]?((0?[1-9])|([1-2][0-9])|(3[01])))|(((0?[469])|(11))[\\-\\/\\s]?((0?[1-9])|([1-2][0-9])|(30)))|(0?2[\\-\\/\\s]?((0?[1-9])|([1-2][0-9])))))|(\\d{2}(([02468][1235679])|([13579][01345789]))[\\-\\/\\s]?((((0?[13578])|(1[02]))[\\-\\/\\s]?((0?[1-9])|([1-2][0-9])|(3[01])))|(((0?[469])|(11))[\\-\\/\\s]?((0?[1-9])|([1-2][0-9])|(30)))|(0?2[\\-\\/\\s]?((0?[1-9])|(1[0-9])|(2[0-8]))))))(\\s(((0?[0-9])|([1][0-9])|([2][0-4]))\\:([0-5]?[0-9])((\\s)|(\\:([0-5]?[0-9])))))?$/", $datetime)){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * @desc 发送值到redis
+	 * @param string $key
+	 * @param string $value
+	 * @return boolean
+	 */
+	function sendRedisPublish($key, $value) {
+		if (empty($key) || empty($value)) { return false; }
+		$redisArr = G('redis');
+		$redis = new Redis();
+		$redis->connect($redisArr['host'], $redisArr['port']);
+		$redis->publish($key, $value);//lpush
+		unset($redis);
+		return true;
+	}
+	
+	/**
+	 * @desc 加密与解密,与接口数据互解
+	 * @param string $str
+	 * @param string $operate
+	 * @return string
+	 */
+	function des($str, $operate='DECODE') {
+		if (empty($str)) { return false; }
+		require_once D_ROOT.'/lib/encryption/DES.class.php';
+		$des = new DES();
+		if ($operate == 'DECODE') {
+			$res = $des->decrypt($str);
+		} else {
+			$res = $des->encrypt($str);
+		}
+		unset($des);
+		return $res;
+	}
+	/**
+	 * @desc 加密与解密,与接口数据互解
+	 * @param string $str
+	 * @param string $operate
+	 * @return string
+	 */
+	function aes($str, $operate='DECODE') {
+		if (empty($str)) { return false; }
+		require_once D_ROOT.'/lib/encryption/AES.class.php';
+		$aes = new AES();
+		if ($operate == 'DECODE') {
+			$res = $aes->decrypt($str);
+		} else {
+			$res = $aes->encrypt($str);
+		}
+		unset($aes);
+		return $res;
+	}
+	
+	/**
+	 * @desc 发送文件流
+	 * @param string $url
+	 * @param binary $file
+	 * @return string
+	 */
+	function apiCallFile($file, $url) {
+		if (empty($url) || empty($file)) { return false; }
+		$opts = array(
+				'http' => array(
+						'method' => 'POST',
+						'header' => 'content-type:application/x-www-form-urlencoded',
+						'content' => $file
+				)
+		);
+		$context = stream_context_create($opts);
+		$response = file_get_contents(API_URL.$url, false, $context);
+		return $response;
+	}
+	
+	function _post($key, $filter='string') {
+		if ($filter == 'int') {
+			$value = intval(addslashes(trim(filter_input(INPUT_POST, $key, FILTER_VALIDATE_INT))));
+		} else {
+			$value = addslashes(trim(filter_input(INPUT_POST, $key, FILTER_SANITIZE_STRING)));
+		}
+		return $value;
+	}
+	
+	function _get($key, $filter='string') {
+		if ($filter == 'int') {
+			$value = intval(addslashes(trim(filter_input(INPUT_GET, $key, FILTER_VALIDATE_INT))));
+		} else {
+			$value = addslashes(trim(filter_input(INPUT_GET, $key, FILTER_SANITIZE_STRING)));
+		}
+		return $value;
+	}	
+	
+	/**
+	 * @desc 是否在微信浏览器中打开
+	 * @return boolean
+	 */
+	function is_weixin() {
+		if ( strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false ) {
+			return true;
+		}
+		return false;
+	}
+	function prepareJSON($input){
+		$input = mb_convert_encoding($input,'UTF-8','ASCII,UTF-8,ISO-8859-1');
+		var_dump($input);die;
+		if(substr($input,0,3) == pack("CCC",0xEF,0xBB,0xBF)) $input = substr($input,3);
+
+		return $input;
+	}
+	/**
+	 * @desc 得到字符串长度
+	 * @param string $str
+	 * @return int
+	 */
+	function getStrlen($str) {
+		$i = 0;
+		$count = 0;
+		$len = strlen($str);
+		while ($i < $len) {
+			$chr = ord ($str[$i]);
+			$count++;
+			$i++;
+			if($i >= $len) { break; }
+			if($chr & 0x80) {
+				$chr <<= 1;
+				while ($chr & 0x80) {
+					$i++;
+					$chr <<= 1;
+				}
+			}
+		}
+		return $count;
+	}
+	/**
+	 * @desc 获取年份
+	 * @param int $num
+	 * @return array
+	 */
+	function getYear($addyear=0, $num=50) {
+		$nowy = date("Y")+$addyear;
+		$arr = array();
+		for ($i=0; $i<$num; $i++) {
+			$they = $nowy - $i;
+			$arr[$they] = $they;
+		}
+		return $arr;
+	}
+	
+	/**
+	 * @desc 获取月份
+	 * @return array
+	 */
+	function getMonth() {
+		$arr = array();
+		for ($i=1; $i<=12; $i++) {
+			$arr[$i] = $i;
+		}
+		return $arr;
+	}
+	
+	/**
+	 * @desc 计算日期差 年月
+	 */
+	function getYearMonth($params) {
+		$start = strtotime($params['start']) ? strtotime($params['start']) : $params['start'];
+		$end = $params['end'] ? (strtotime($params['end']) ? strtotime($params['end']) : $params['end']) : time();
+
+		$timetemp = abs($end - $start);
+		$y = floor($timetemp / (3600*24*360));
+		$string = '';
+		if ($y) {
+			$timetemp -= $y * 3600 * 24 * 360;
+			$string .= $y.'年';
+		}
+		$m = floor($timetemp / (3600*24*30));
+		if ($m > 0) {
+			$string .= $m.'个月';
+		}
+		return $string;
+	}

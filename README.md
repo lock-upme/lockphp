@@ -12,6 +12,9 @@
 
 	configs             ------- 配置文件
 		db.php			    ------- 数据库信息
+        dict.php            ------- 字典信息
+        dict                ------- 字典配置目录
+        redis.php           ------- redis配置信息
 		route.php			------- 路由表
 		setting.php	        ------- 配置信息
 		global.php	        ------- 全局配置信息
@@ -19,23 +22,26 @@
 		Index.class.php	------- 首页
 	lib							------- 库
 		db						------- 数据库
-		magick				------- 图片裁剪
-		mail						------- 邮件发送
-		pagination			------- 分页
-		smarty					------- 模板引擎
-		qrcode				------- 二维码
-		snoopy				------- 远程页面抓取
-		functions.php 	------- 常用方法, 可自行添加
-		Lock.class.php	------- Lock 类
+        encryption              ------- AES/DES加密
+		magick                  ------- 图片裁剪
+		mail                    ------- 邮件发送
+		pagination              ------- 分页
+        particle                ------- 雪花ＩＤ
+		smarty3                 ------- 模板引擎
+		qrcode                  ------- 二维码
+		snoopy                  ------- 远程页面抓取
+        ＶalidateCode           ------- 图片验证码
+		functions.php           ------- 常用方法, 可自行添加
+		Lock.class.php          ------- Lock 类
 	media						------- 资源
 		css						------- 全局样式
 		images				------- 全局图片
-		javascript			------- 全局JS文件，包括一些js库
+		js                  ------- 全局JS文件，包括一些js库
 		themes				------- 网站主题
 			default			-------  默认主题
-				css				------- 样式
+				css			------- 样式
 				images		------- 图片
-				javascript	------- JS
+				js          ------- JS
 				index.tpl		------- 模板
 	storage					------- 缓存，语言等文件
 		cache					------- 文件缓存
@@ -70,7 +76,14 @@
 		//多数组缓存
 		$sql = "SELECT uid,username FROM ".TNAME."member limit 10";
 		$result = $this->db->fetchRowsCache($sql);
-		print_r($result);	
+		print_r($result);
+
+#增加配置字典获取方法 2016/09/09
+获取global.php配置文件具体值
+deomo:
+G('dict.sex')
+G('ip')
+
 		
 #Html模板调用
 模板引擎采用smarty模板，直接用smarty方法即可

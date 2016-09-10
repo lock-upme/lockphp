@@ -8,12 +8,15 @@
  * '!^article/\d+$!i'=> array('类名', '方法'), http://www.domian.com/article/1
  */
 $urls = array(
-	//example
-	'!^$!' => array('Index', 'Page_Index'), //入口
-	'!^index.php!' => array('Index', 'Page_Index'), //入口
+	//demo
 	
+	'!^$!' => array('Index','Page_Index'), //入口
+	'!^index.php!' => array('Index','Page_Index'),//入口
+	
+	//用户
+	'!^user/login(/|)(\?.*|)$!i' => array('User', 'Page_Login'),//登录
+	
+	//用户处理	
+	'!^ajax/login(/|)$!i' => array('UserAjax', 'login'),//登录
 
-	'!^article/\d+$!i'=> array('Article', 'showDetail'), //文章详情
-	'!^article/add!' => array('Article','add'), //文章发布
-	
 );

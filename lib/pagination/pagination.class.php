@@ -21,9 +21,9 @@ Author URI: http://www.mis-algoritmos.com
 
 		/*Buttons next and previous*/
 		var $nextT = "下一页";
-		var $nextI = "&#187;"; //&#9658;
+		var $nextI = ""; //&#9658; &#187;
 		var $prevT = "上一页";
-		var $prevI = "&#171;"; //&#9668;
+		var $prevI = ""; //&#9668; &#171;
 
 		/*****/
 		var $calculate = false;
@@ -68,17 +68,23 @@ Author URI: http://www.mis-algoritmos.com
 		
 		var $pagination;
 
-		function pagination(){}
+		function __construct(){}
 		function show(){
 				if(!$this->calculate)
 					if($this->calculate())
-						return "<div class=\"$this->className\">$this->pagination</div>\n";
+						return "<ul class=\"$this->className\">$this->pagination</ul>\n";
 						//echo "<div class=\"$this->className\">$this->pagination</div>\n"; //直接显示
 			}
+		function show_style2(){
+				if(!$this->calculate)
+					if($this->calculate_style2())
+						return "<ul class=\"$this->className\">$this->pagination</ul>\n";
+						//echo "<div class=\"$this->className\">$this->pagination</div>\n"; //直接显示
+			}	
 		function getOutput(){
 				if(!$this->calculate)
 					if($this->calculate())
-						return "<div class=\"$this->className\">$this->pagination</div>\n";
+						return "<ul class=\"$this->className\">$this->pagination</ul>\n";
 			}
 		function get_pagenum_link($id){
 				if(strpos($this->target,'?')===false)
@@ -99,7 +105,126 @@ Author URI: http://www.mis-algoritmos.com
 						echo "Especificaste un wildcard para sustituir, pero no existe en el target<br />";
 						$error = true;
 					}elseif($this->urlF and $this->urlF == '%' and strpos($this->target,$this->urlF)===false){
-						echo "Es necesario especificar en el target el comodin % para sustituir el n鷐ero de p醙ina<br />";
+						echo "Es necesario especificar en el target el comodin % para sustituir el número de página<br />";
+						$error = true;
+					}
+
+				if($this->total_pages < 0){
+						echo "It is necessary to specify the <strong>number of pages</strong> (\$class->items(1000))<br />";
+						$error = true;
+					}
+				if($this->limit == null){
+						echo "It is necessary to specify the <strong>limit of items</strong> to show per page (\$class->limit(10))<br />";
+						$error = true;
+					}
+				if($error)return false;
+				
+				$n = trim($this->nextT.' '.$this->nextI);
+				$p = trim($this->prevI.' '.$this->prevT);
+				
+				/* Setup vars for query. */
+				if($this->page) 
+					$start = ($this->page - 1) * $this->limit;             //first item to display on this page
+				else
+					$start = 0;                                //if no page var is given, set start to 0
+			
+				/* Setup page vars for display. */
+				$prev = $this->page - 1;                            //previous page is page - 1
+				$next = $this->page + 1;                            //next page is page + 1
+				$lastpage = ceil($this->total_pages/$this->limit);        //lastpage is = total pages / items per page, rounded up.
+				$lpm1 = $lastpage - 1;                        //last page minus 1
+				
+				/* 
+					Now we apply our rules and draw the pagination object. 
+					We're actually saving the code to a variable in case we want to draw it more than once.
+				*/
+				
+				if($lastpage > 1){
+						if($this->page){
+								//anterior button
+							$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(1)."\">首页</a></li>";
+								if($this->page > 1)
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($prev)."\" class=\"prev\">$p</a></li>";
+									else 										
+										$this->pagination .= "<li class=\"disabled\"><a href=\"#\">$p</a></li>";
+									
+							}
+						//pages	
+						if ($lastpage < 7 + ($this->adjacents * 2)){//not enough pages to bother breaking it up
+								for ($counter = 1; $counter <= $lastpage; $counter++){
+										if ($counter == $this->page)
+												$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
+											else
+												$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
+									}
+							}
+						elseif($lastpage > 5 + ($this->adjacents * 2)){//enough pages to hide some
+								//close to beginning; only hide later pages
+								if($this->page < 1 + ($this->adjacents * 2)){
+										for ($counter = 1; $counter < 2 + ($this->adjacents * 2); $counter++){
+												if ($counter == $this->page)
+														$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
+													else
+														$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
+											}
+										//$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lpm1)."\">$lpm1</a></li>";
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lastpage)."\">$lastpage</a></li>";
+									}
+								//in middle; hide some front and some back
+								elseif($lastpage - ($this->adjacents * 2) > $this->page && $this->page > ($this->adjacents * 2)){
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(1)."\">1</a></li>";
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(2)."\">2</a></li>";
+										//$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
+										for ($counter = $this->page - $this->adjacents; $counter <= $this->page + $this->adjacents; $counter++)
+											if ($counter == $this->page)
+													$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
+												else
+													$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
+										//$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lpm1)."\">$lpm1</a></li>";
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lastpage)."\">$lastpage</a></li>";
+									}
+								//close to end; only hide early pages
+								else{
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(1)."\">1</a></li>";
+										//$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(2)."\">2</a></li>";
+										//$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
+										for ($counter = $lastpage - (1 + ($this->adjacents * 2)) + 1; $counter <= $lastpage; $counter++)
+											if ($counter == $this->page)
+													$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
+												else
+													$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
+									}
+							}
+						if($this->page){
+								//siguiente button
+								if ($this->page < $counter - 1)
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($next)."\" class=\"next\">$n</a></li>";
+									else
+										$this->pagination .= "<li class=\"disabled\"><a href=\"#\">$n</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lastpage)."\">尾页</a></li>";
+									if($this->showCounter)$this->pagination .= "<ul class=\"pagination_data\">($this->total_pages Pages)</ul>";
+							}
+					}
+
+				return true;
+			}
+			
+			/**
+			 * @@desc 原来的分页形式
+			 * @return boolean
+			 */
+		function calculate_style2(){
+				$this->pagination = "";
+				$this->calculate == true;
+				$error = false;
+				if($this->urlF and $this->urlF != '%' and strpos($this->target,$this->urlF)===false){
+						//Es necesario especificar el comodin para sustituir
+						echo "Especificaste un wildcard para sustituir, pero no existe en el target<br />";
+						$error = true;
+					}elseif($this->urlF and $this->urlF == '%' and strpos($this->target,$this->urlF)===false){
+						echo "Es necesario especificar en el target el comodin % para sustituir el número de página<br />";
 						$error = true;
 					}
 
@@ -137,17 +262,17 @@ Author URI: http://www.mis-algoritmos.com
 						if($this->page){
 								//anterior button
 								if($this->page > 1)
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link($prev)."\" class=\"prev\">$p</a>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($prev)."\" class=\"prev\">$p</a></li>";
 									else
-										$this->pagination .= "<span class=\"disabled\">$p</span>";
+										$this->pagination .= "<li class=\"disabled\"><a href=\"#\">$p</a></li>";
 							}
 						//pages	
 						if ($lastpage < 7 + ($this->adjacents * 2)){//not enough pages to bother breaking it up
 								for ($counter = 1; $counter <= $lastpage; $counter++){
 										if ($counter == $this->page)
-												$this->pagination .= "<span class=\"current\">$counter</span>";
+												$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
 											else
-												$this->pagination .= "<a href=\"".$this->get_pagenum_link($counter)."\">$counter</a>";
+												$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
 									}
 							}
 						elseif($lastpage > 5 + ($this->adjacents * 2)){//enough pages to hide some
@@ -155,51 +280,52 @@ Author URI: http://www.mis-algoritmos.com
 								if($this->page < 1 + ($this->adjacents * 2)){
 										for ($counter = 1; $counter < 4 + ($this->adjacents * 2); $counter++){
 												if ($counter == $this->page)
-														$this->pagination .= "<span class=\"current\">$counter</span>";
+														$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
 													else
-														$this->pagination .= "<a href=\"".$this->get_pagenum_link($counter)."\">$counter</a>";
+														$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
 											}
-										$this->pagination .= "...";
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link($lpm1)."\">$lpm1</a>";
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link($lastpage)."\">$lastpage</a>";
+										$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lpm1)."\">$lpm1</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lastpage)."\">$lastpage</a></li>";
 									}
 								//in middle; hide some front and some back
 								elseif($lastpage - ($this->adjacents * 2) > $this->page && $this->page > ($this->adjacents * 2)){
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link(1)."\">1</a>";
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link(2)."\">2</a>";
-										$this->pagination .= "...";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(1)."\">1</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(2)."\">2</a></li>";
+										$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
 										for ($counter = $this->page - $this->adjacents; $counter <= $this->page + $this->adjacents; $counter++)
 											if ($counter == $this->page)
-													$this->pagination .= "<span class=\"current\">$counter</span>";
+													$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
 												else
-													$this->pagination .= "<a href=\"".$this->get_pagenum_link($counter)."\">$counter</a>";
-										$this->pagination .= "...";
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link($lpm1)."\">$lpm1</a>";
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link($lastpage)."\">$lastpage</a>";
+													$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
+										$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lpm1)."\">$lpm1</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($lastpage)."\">$lastpage</a></li>";
 									}
 								//close to end; only hide early pages
 								else{
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link(1)."\">1</a>";
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link(2)."\">2</a>";
-										$this->pagination .= "...";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(1)."\">1</a></li>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link(2)."\">2</a></li>";
+										$this->pagination .= "<li><a href='javascript:;'>...</a></li>";
 										for ($counter = $lastpage - (2 + ($this->adjacents * 2)); $counter <= $lastpage; $counter++)
 											if ($counter == $this->page)
-													$this->pagination .= "<span class=\"current\">$counter</span>";
+													$this->pagination .= "<li class=\"active\"><a href=\"#\">$counter</a></li>";
 												else
-													$this->pagination .= "<a href=\"".$this->get_pagenum_link($counter)."\">$counter</a>";
+													$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($counter)."\">$counter</a></li>";
 									}
 							}
 						if($this->page){
 								//siguiente button
 								if ($this->page < $counter - 1)
-										$this->pagination .= "<a href=\"".$this->get_pagenum_link($next)."\" class=\"next\">$n</a>";
+										$this->pagination .= "<li><a href=\"".$this->get_pagenum_link($next)."\" class=\"next\">$n</a></li>";
 									else
-										$this->pagination .= "<span class=\"disabled\">$n</span>";
-									if($this->showCounter)$this->pagination .= "<div class=\"pagination_data\">($this->total_pages Pages)</div>";
+										$this->pagination .= "<li class=\"disabled\"><a href=\"#\">$n</a></li>";
+									if($this->showCounter)$this->pagination .= "<ul class=\"pagination_data\">($this->total_pages Pages)</ul>";
 							}
 					}
 
 				return true;
-			}
+			}	
+			
 	}
 ?>

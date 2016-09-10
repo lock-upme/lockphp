@@ -3,7 +3,7 @@
 $_GLOBAL = array(
 		'time' => $_SERVER['REQUEST_TIME'],
 		'ip' => getIp(),
-		'cookie' => array( 'path' => '/',  'domain' => '.'. $_SERVER['SERVER_NAME']	),
+		'cookie' => array('name' => '_nahehuowap', 'time' =>time()+3600*72, 'path' => '/',  'domain' => '.'. $_SERVER['SERVER_NAME']),
 		'mime' => array(
 				'img' => array('jpeg' => 'image/jpeg', 'jpg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'bmp' => 'image/x-ms-bmp'),
 				'file' => array('mp3' => 'audio/mpeg', 'xls'=>'application/vnd.ms-excel', 'xlsx'=>'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'doc'=>'application/msword', 'docx'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document','txt'=>'text/plain','pdf'=>'application/pdf','jpg' => 'image/jpeg'),
@@ -16,6 +16,8 @@ $_GLOBAL = array(
 				'avatar' => array('big' => '210x210', 'small' => '120x120'),
 				'common' => array('big' => '100x100', 'small' => '30x30'),
 		),
+		'dict' => require 'dict.php',
+		'redis' => require 'redis.php'
 );
 
 

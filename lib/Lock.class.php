@@ -10,20 +10,22 @@ class Lock {
 	public $pagination;
 	
 	public function __construct() {
-		require_once(D_ROOT.'lib/pagination/pagination.class.php');//引入分页
-		require_once(D_ROOT.'lib/db/mysqli.class.php');//mysqli 驱动
-		
-		require_once(D_ROOT.'configs/db.php');
-		$db = new DB($cc['dbuser'], $cc['dbpwd'], $cc['dbdatabase'],$cc['dbhost']);
-		
+		global $dbConfig;
 		$smarty = new Smt;
 		$pagination = new pagination();
-
 		$this->smarty = $smarty;
-		$this->db = $db;
+		$this->db = new DB($dbConfig['dbuser'], $dbConfig['dbpwd'], $dbConfig['dbdatabase'], $dbConfig['dbhost']);
 		$this->pagination = $pagination;
 	}
 	
+	public function showmessage($msg, $url='') {
+		$this->smarty ->assign('flush','1');
+		$this->smarty ->assign('message',$msg);
+		$this->smarty ->assign('url',$url);
+		$this->smarty ->display('404.tpl');
+		exit;
+	}
+		
 }
 
 /**
@@ -32,27 +34,30 @@ class Lock {
 class Smt extends Smarty {
 	public $style;
 
-	public function Smt() {
+	public function __construct() {
+		
+		parent::__construct();
+		
 		if (empty($_SESSION['lang'])) { $lang = 'cn'; $_SESSION['lang'] = 'cn'; }
 		else { $lang = $_SESSION['lang']; }
 		$source = $_SERVER['REQUEST_URI'];
 
-		$this->style = 'default';
-		$this->Smarty();
+		$this->style = 'default';		
 		$this->template_dir = D_ROOT.'/media/themes/'.$this->style.'/';
 		$this->compile_dir = D_ROOT.'/storage/'.$lang.'/templates_c/'.$this->style.'/';
 		$this->config_dir = D_ROOT.'/storage/configs/'.$this->style.'/';
 		$this->cache_dir = D_ROOT.'/storage/'.$lang.'/cache/'.$this->style.'/';
-
+		$configdir = $this->getConfigDir(0);
+		
 		switch($lang){
 			case 'cn' :
-				$this->config_load($this->config_dir.'zh-cn.lang');
+				$this->configLoad($configdir.'zh-cn.lang');
 				break;
 			case 'en' :
-				$this->config_load($this->config_dir.'en-us.lang');
+				$this->configLoad($configdir.'en-us.lang');
 				break;
 			default:
-				$this->config_load($this->config_dir.'zh-cn.lang');
+				$this->configLoad($configdir.'zh-cn.lang');
 				break;
 		}
 
@@ -65,16 +70,70 @@ class Smt extends Smarty {
 		//$this->caching = true;
 
 		//注册函数
-		//$this->register_function("smartAuthStatus",array('common','smartAuthStatus'));
-		//$this->register_block("dynamic", array('common','smarty_block_dynamic'), false);
+		$this->registerPlugin("function","smartyDict", array('Smt','smartyDict'));
+		$this->registerPlugin("function","smartStrOverTime", array('Smt','smartStrOverTime'));
 	}
-
+	
+	/**
+	 * @desc 在模板中得到配置字典值
+	 * @param array $param
+	 * @return string
+	 */
+	public static function smartyDict($param) {
+		$dict = G('dict');
+		$res = $dict[$param['type']];
+		if (is_numeric($param['id'])) {
+			$tmp = ($param['type'] == 'area') ? $res[$param['id']]['name'] : $res[$param['id']];
+			return $tmp ? $tmp : '无';
+		} elseif (is_string($param['id'])) {
+			$arr = explode(',', $param['id']);
+			$str = '';
+			if ($param['type'] == 'area'){
+				foreach($arr as $id) {
+					$str .= $res[$id]['name'].',';
+				}
+			}else{
+				foreach($arr as $id) {
+					$str .= $res[$id].',';
+				}
+			}
+			return trim($str,',');
+		} else {
+			return $res;
+		}
+	}
+	/**
+	 * @desc 多久结束
+	 * @param $time 时间戳
+	 * @return string
+	 */
+	public static function smartStrOverTime($params) {
+		$start = $params['start'];
+		$end = $params['end'];
+		$word = !empty($params['over']) ? '过期' :  '结束';
+		if ($end < strtotime('now'))
+			return '已'.$word;
+		$time = $end-$start;
+		if ($time < 60 * 60) {
+			$str = '1小时内'.$word;
+		} elseif ($time < 60 * 60 * 24) {
+			$h = floor($time/(60*60));
+			$str = '还有'.$h.'小时'.$word;
+		} elseif ($time < 60 * 60 * 24 * 8) {
+			$d = floor($time/(60*60*24));
+			$str = '还有'.$d.'天'.$word;
+		} else {
+			$d = floor($time/(60*60*24));
+			$str = '还有'.$d.'天'.$word;
+		}
+		return $str;
+	}
 }
 
 /**
  * @desc route function
  */
-function route( $urls ) {
+function route($urls) {
 	$path = $_SERVER['REQUEST_URI'];
 	$path = ltrim($path, '/');
 	foreach($urls as $pattern => $app) {
